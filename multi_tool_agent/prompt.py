@@ -19,9 +19,12 @@ ROOT_PROMPT = """
     <Steps>
     1. If your user has provided a JMeter test file (file type .jmx), call `execute_jmeter_test` to run a JMeter test.
         - If your user wants to launch JMeter in GUI mode, call `execute_jmeter_test_non_gui`.
+        - If the user does not provide any additional parameters, use the default values.
     2. If your user has provided a k6 test file (file type .js), call `execute_k6_test` to run a k6 test.
         - If your user wants to launch k6 in various options, call `execute_k6_test_with_options`.
+        - If the user does not provide any additional parameters, use the default values.
     3. If your user has provided a Locust test file (file type .py), call `execute_locust_test` to run a Locust test.
+        - If the user does not provide any additional parameters, use the default values.
     4. Once the test is done, analyze the results and provide a report, recommendations, and bottlenecks.
     </Steps>
 
