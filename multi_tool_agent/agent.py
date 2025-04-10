@@ -80,7 +80,7 @@ async def execute_gatling_test(directory_name: str, class_name: Optional[str] = 
     Args:
         directory_name: Name of the Gatling simulation directory
         class_name: Optional name of the Gatling simulation class (default: None)
-        runner: Optional runner to use (default: mvn)
+        runner: Optional runner to use (default: mvn) other option: gradle
 
     Returns:
         str: Gatling simulation output
