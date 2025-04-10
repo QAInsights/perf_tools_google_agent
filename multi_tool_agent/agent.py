@@ -74,13 +74,13 @@ async def execute_locust_test(test_file: str, host: str = os.getenv("LOCUST_HOST
     """
     return await run_locust_test(test_file, host, users, spawn_rate, runtime, headless)
 
-async def execute_gatling_test(directory_name: str, class_name: Optional[str] = None, runner: str = os.getenv("GATLING_RUNNER", "java")) -> str:
+async def execute_gatling_test(directory_name: str, class_name: Optional[str] = None, runner: str = os.getenv("GATLING_RUNNER", "mvn")) -> str:
     """Run a Gatling simulation.
 
     Args:
         directory_name: Name of the Gatling simulation directory
         class_name: Optional name of the Gatling simulation class (default: None)
-        runner: Optional runner to use (default: java)
+        runner: Optional runner to use (default: mvn)
 
     Returns:
         str: Gatling simulation output
