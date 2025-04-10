@@ -1,10 +1,11 @@
 from google.adk.agents import Agent
-from typing import Any
+from typing import Any, Awaitable, Optional
 import os
 import logging
 from .jmeter_utils import run_jmeter
 from .k6_utils import run_k6_script
 from .locust_utils import run_locust_test
+from .gatling_utils import run_gatling_simulation
 from dotenv import load_dotenv
 from . import prompt
 
@@ -73,14 +74,34 @@ async def execute_locust_test(test_file: str, host: str = os.getenv("LOCUST_HOST
     """
     return await run_locust_test(test_file, host, users, spawn_rate, runtime, headless)
 
+async def execute_gatling_test(directory_name: str, class_name: Optional[str] = None, runner: str = os.getenv("GATLING_RUNNER", "java")) -> str:
+    """Run a Gatling simulation.
+
+    Args:
+        directory_name: Name of the Gatling simulation directory
+        class_name: Optional name of the Gatling simulation class (default: None)
+        runner: Optional runner to use (default: java)
+
+    Returns:
+        str: Gatling simulation output
+    """
+    return await run_gatling_simulation(directory_name, class_name, runner)
+
 root_agent = Agent(
     name=os.getenv('FEATHERWAND_NAME', 'featherwand_agent'),
     model=os.getenv('FEATHERWAND_MODEL', 'gemini-2.0-flash-exp'),
     description=(
-        os.getenv('FEATHERWAND_DESCRIPTION', 'Agent to execute JMeter, k6, and Locust tests.')
+        os.getenv('FEATHERWAND_DESCRIPTION', 'Agent to execute JMeter, k6, Gatling and Locust tests.')
     ),
     instruction=(
         prompt.ROOT_PROMPT 
     ),
-    tools=[execute_jmeter_test, execute_jmeter_test_non_gui, execute_k6_test, execute_k6_test_with_options, execute_locust_test],
+    tools=[
+        execute_jmeter_test, 
+        execute_jmeter_test_non_gui, 
+        execute_k6_test, 
+        execute_k6_test_with_options, 
+        execute_locust_test, 
+        execute_gatling_test
+    ],
 )
