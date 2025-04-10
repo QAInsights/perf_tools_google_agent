@@ -177,3 +177,9 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+multi_tool_agent/tests/unit/test_tools.py
+
+# macOS system files
+**/.DS_Store
+.DS_Store
+
