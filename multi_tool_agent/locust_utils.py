@@ -17,7 +17,7 @@ async def run_locust_test(test_file: str, host: str = os.getenv("LOCUST_HOST", "
                     users: int = int(os.getenv("LOCUST_USERS", "100")), 
                     spawn_rate: int = int(os.getenv("LOCUST_SPAWN_RATE", "10")), 
                     runtime: str = os.getenv("LOCUST_RUNTIME", "30s"), 
-                    headless: bool = os.getenv("LOCUST_HEADLESS", "true").lower() == "true") -> Any:
+                    headless: bool = os.getenv("LOCUST_HEADLESS", "true").lower() == "true") -> dict:
     """
     Run Locust with the given configuration.
     
@@ -28,6 +28,9 @@ async def run_locust_test(test_file: str, host: str = os.getenv("LOCUST_HOST", "
         spawn_rate: Rate at which users are spawned per second
         runtime: Duration of the test (e.g., "30s", "1m", "5m")
         headless: Whether to run in headless mode (no web UI)
+        
+    Returns:
+        dict: A dictionary containing status, output, and error information
     """
     locust_bin = os.getenv("LOCUST_BIN", "locust")
     cmd = [locust_bin, "-f", test_file, "--host", host]
