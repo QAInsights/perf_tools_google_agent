@@ -9,6 +9,7 @@ from unittest import IsolatedAsyncioTestCase
 from multi_tool_agent.jmeter_utils import run_jmeter
 from multi_tool_agent.locust_utils import run_locust_test
 from multi_tool_agent.k6_utils import run_k6_script
+from multi_tool_agent.gatling_utils import run_gatling_simulation
 
 class TestJMeterUtils(IsolatedAsyncioTestCase):
     def setUp(self):
@@ -73,6 +74,26 @@ class TestK6Utils(IsolatedAsyncioTestCase):
             self.assertIsInstance(result, str)
             self.assertIn("error", result.lower())
 
+class TestGatlingUtils(IsolatedAsyncioTestCase):
+    def setUp(self):
+        self.test_directory = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "sample", "gatling-maven-plugin-demo-java-main")
+        self.test_class = "BasicSimulation"
+    
+    async def test_run_gatling_simulation(self):
+        """Test running a Gatling simulation"""
+        mock_output = "Gatling simulation output"
+        with patch('subprocess.run', return_value=MagicMock(stdout=mock_output, stderr="", returncode=0)) as mock_run:
+            result = await run_gatling_simulation(self.test_directory, self.test_class)
+            self.assertIsInstance(result, str)
+            self.assertIn("output", result.lower())
+    
+    async def test_run_gatling_simulation_failure(self):
+        """Test Gatling simulation failure"""
+        error_msg = "Gatling simulation failed"
+        with patch('subprocess.run', side_effect=subprocess.CalledProcessError(1, "cmd", error_msg)) as mock_run:
+            result = await run_gatling_simulation(self.test_directory, self.test_class)
+            self.assertIsInstance(result, str)
+            self.assertIn("error", result.lower())
 
 if __name__ == '__main__':
     unittest.main()
