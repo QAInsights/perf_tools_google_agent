@@ -1,0 +1,7 @@
+.git
+.env
+__pycache__/
+*.py[cod]
+*$py.class
+sessions.db
+sessions.db-journal
