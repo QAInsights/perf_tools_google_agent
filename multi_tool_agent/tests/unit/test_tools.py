@@ -2,9 +2,34 @@ import unittest
 import os
 import asyncio
 import subprocess
-from unittest.mock import patch, MagicMock
+import tempfile # Added
+from unittest.mock import patch, MagicMock, AsyncMock, call # Added AsyncMock, call
 from pathlib import Path
 from unittest import IsolatedAsyncioTestCase
+
+# Assume google.adk.types.File exists and can be mocked
+try:
+    from google.adk.types import File
+except ImportError:
+    # Create a dummy File class for environments where ADK is not installed
+    class File:
+        def __init__(self, name="mock_file", content=b""):
+            self.name = name
+            self._content = content
+        def save_to(self, path):
+            with open(path, 'wb') as f:
+                f.write(self._content)
+        def __repr__(self):
+            return f"MockFile(name='{self.name}')"
+
+# Import agent functions to be tested
+from multi_tool_agent.agent import (
+    execute_jmeter_test,
+    execute_jmeter_test_non_gui,
+    execute_k6_test,
+    execute_k6_test_with_options,
+    execute_locust_test
+)
 
 from multi_tool_agent.jmeter_utils import run_jmeter
 from multi_tool_agent.locust_utils import run_locust_test
@@ -94,6 +119,191 @@ class TestGatlingUtils(IsolatedAsyncioTestCase):
             result = await run_gatling_simulation(self.test_directory, self.test_class)
             self.assertIsInstance(result, str)
             self.assertIn("error", result.lower())
+
+# --- Existing Test Classes (TestJMeterUtils, TestLocustUtils, etc.) ---
+# --- Should remain above this line ---
+
+
+# --- New Test Class for File Upload Agent Tools ---
+class TestFileUploadAgentTools(IsolatedAsyncioTestCase):
+
+    @patch('multi_tool_agent.agent.run_jmeter', new_callable=AsyncMock)
+    @patch('multi_tool_agent.agent.os.remove')
+    @patch('multi_tool_agent.agent.tempfile.NamedTemporaryFile')
+    async def test_execute_jmeter_test_file_upload(self, mock_tempfile, mock_remove, mock_run_jmeter):
+        """Test execute_jmeter_test with ADK File upload"""
+        # Setup Mocks
+        mock_adk_file = MagicMock(spec=File)
+        mock_adk_file.name = "test.jmx"
+
+        mock_temp_file_obj = MagicMock()
+        mock_temp_file_obj.name = "/tmp/fake_jmeter_file.jmx"
+        # Configure the context manager mock
+        mock_tempfile_cm = MagicMock()
+        mock_tempfile_cm.__enter__.return_value = mock_temp_file_obj
+        mock_tempfile.return_value = mock_tempfile_cm
+
+        expected_result = "JMeter test finished successfully."
+        mock_run_jmeter.return_value = expected_result
+
+        # Call function
+        result = await execute_jmeter_test(mock_adk_file, gui_mode=False) # Default non-gui
+
+        # Assertions
+        mock_tempfile.assert_called_once_with(suffix=".jmx", delete=False)
+        mock_adk_file.save_to.assert_called_once_with(mock_temp_file_obj.name)
+        mock_run_jmeter.assert_called_once_with(mock_temp_file_obj.name, non_gui=True)
+        mock_remove.assert_called_once_with(mock_temp_file_obj.name)
+        self.assertEqual(result, expected_result)
+
+    @patch('multi_tool_agent.agent.run_jmeter', new_callable=AsyncMock)
+    @patch('multi_tool_agent.agent.os.remove')
+    @patch('multi_tool_agent.agent.tempfile.NamedTemporaryFile')
+    async def test_execute_jmeter_test_non_gui_file_upload(self, mock_tempfile, mock_remove, mock_run_jmeter):
+        """Test execute_jmeter_test_non_gui with ADK File upload"""
+        # Setup Mocks
+        mock_adk_file = MagicMock(spec=File)
+        mock_adk_file.name = "test_non_gui.jmx"
+
+        mock_temp_file_obj = MagicMock()
+        mock_temp_file_obj.name = "/tmp/fake_jmeter_non_gui.jmx"
+        mock_tempfile_cm = MagicMock()
+        mock_tempfile_cm.__enter__.return_value = mock_temp_file_obj
+        mock_tempfile.return_value = mock_tempfile_cm
+
+        expected_result = "JMeter non-GUI test finished successfully."
+        mock_run_jmeter.return_value = expected_result
+
+        # Call function
+        result = await execute_jmeter_test_non_gui(mock_adk_file)
+
+        # Assertions
+        mock_tempfile.assert_called_once_with(suffix=".jmx", delete=False)
+        mock_adk_file.save_to.assert_called_once_with(mock_temp_file_obj.name)
+        mock_run_jmeter.assert_called_once_with(mock_temp_file_obj.name, non_gui=True)
+        mock_remove.assert_called_once_with(mock_temp_file_obj.name)
+        self.assertEqual(result, expected_result)
+
+    @patch('multi_tool_agent.agent.run_k6_script', new_callable=AsyncMock)
+    @patch('multi_tool_agent.agent.os.remove')
+    @patch('multi_tool_agent.agent.tempfile.NamedTemporaryFile')
+    async def test_execute_k6_test_file_upload(self, mock_tempfile, mock_remove, mock_run_k6):
+        """Test execute_k6_test with ADK File upload"""
+        # Setup Mocks
+        mock_adk_file = MagicMock(spec=File)
+        mock_adk_file.name = "test.js"
+
+        mock_temp_file_obj = MagicMock()
+        mock_temp_file_obj.name = "/tmp/fake_k6_script.js"
+        mock_tempfile_cm = MagicMock()
+        mock_tempfile_cm.__enter__.return_value = mock_temp_file_obj
+        mock_tempfile.return_value = mock_tempfile_cm
+
+        expected_result = "k6 test finished."
+        mock_run_k6.return_value = expected_result
+        duration = "10s"
+        vus = 5
+
+        # Call function
+        result = await execute_k6_test(mock_adk_file, duration=duration, vus=vus)
+
+        # Assertions
+        mock_tempfile.assert_called_once_with(suffix=".js", delete=False)
+        mock_adk_file.save_to.assert_called_once_with(mock_temp_file_obj.name)
+        mock_run_k6.assert_called_once_with(mock_temp_file_obj.name, duration, vus)
+        mock_remove.assert_called_once_with(mock_temp_file_obj.name)
+        self.assertEqual(result, expected_result)
+
+    @patch('multi_tool_agent.agent.run_k6_script', new_callable=AsyncMock)
+    @patch('multi_tool_agent.agent.os.remove')
+    @patch('multi_tool_agent.agent.tempfile.NamedTemporaryFile')
+    async def test_execute_k6_test_with_options_file_upload(self, mock_tempfile, mock_remove, mock_run_k6):
+        """Test execute_k6_test_with_options with ADK File upload"""
+        # Setup Mocks
+        mock_adk_file = MagicMock(spec=File)
+        mock_adk_file.name = "test_options.js"
+
+        mock_temp_file_obj = MagicMock()
+        mock_temp_file_obj.name = "/tmp/fake_k6_options.js"
+        mock_tempfile_cm = MagicMock()
+        mock_tempfile_cm.__enter__.return_value = mock_temp_file_obj
+        mock_tempfile.return_value = mock_tempfile_cm
+
+        expected_result = "k6 options test finished."
+        mock_run_k6.return_value = expected_result
+        duration = "1m"
+        vus = 20
+
+        # Call function
+        result = await execute_k6_test_with_options(mock_adk_file, duration=duration, vus=vus)
+
+        # Assertions
+        mock_tempfile.assert_called_once_with(suffix=".js", delete=False)
+        mock_adk_file.save_to.assert_called_once_with(mock_temp_file_obj.name)
+        mock_run_k6.assert_called_once_with(mock_temp_file_obj.name, duration, vus)
+        mock_remove.assert_called_once_with(mock_temp_file_obj.name)
+        self.assertEqual(result, expected_result)
+
+    @patch('multi_tool_agent.agent.run_locust_test', new_callable=AsyncMock)
+    @patch('multi_tool_agent.agent.os.remove')
+    @patch('multi_tool_agent.agent.tempfile.NamedTemporaryFile')
+    async def test_execute_locust_test_file_upload(self, mock_tempfile, mock_remove, mock_run_locust):
+        """Test execute_locust_test with ADK File upload"""
+        # Setup Mocks
+        mock_adk_file = MagicMock(spec=File)
+        mock_adk_file.name = "test.py"
+
+        mock_temp_file_obj = MagicMock()
+        mock_temp_file_obj.name = "/tmp/fake_locust_file.py"
+        mock_tempfile_cm = MagicMock()
+        mock_tempfile_cm.__enter__.return_value = mock_temp_file_obj
+        mock_tempfile.return_value = mock_tempfile_cm
+
+        expected_result = {"status": "success", "output": "Locust finished", "error": ""}
+        mock_run_locust.return_value = expected_result
+        host = "http://example.com"
+        users = 50
+        spawn_rate = 5
+        runtime = "2m"
+        headless = False
+
+        # Call function
+        result = await execute_locust_test(mock_adk_file, host=host, users=users, spawn_rate=spawn_rate, runtime=runtime, headless=headless)
+
+        # Assertions
+        mock_tempfile.assert_called_once_with(suffix=".py", delete=False)
+        mock_adk_file.save_to.assert_called_once_with(mock_temp_file_obj.name)
+        mock_run_locust.assert_called_once_with(mock_temp_file_obj.name, host, users, spawn_rate, runtime, headless)
+        mock_remove.assert_called_once_with(mock_temp_file_obj.name)
+        self.assertEqual(result, expected_result)
+
+    # Example test for cleanup failure (optional but good practice)
+    @patch('multi_tool_agent.agent.run_jmeter', new_callable=AsyncMock)
+    @patch('multi_tool_agent.agent.os.remove')
+    @patch('multi_tool_agent.agent.tempfile.NamedTemporaryFile')
+    async def test_execute_jmeter_test_cleanup_failure(self, mock_tempfile, mock_remove, mock_run_jmeter):
+        """Test execute_jmeter_test handles os.remove failure gracefully."""
+        mock_adk_file = MagicMock(spec=File)
+        mock_temp_file_obj = MagicMock()
+        mock_temp_file_obj.name = "/tmp/fake_jmeter_cleanup.jmx"
+        mock_tempfile_cm = MagicMock()
+        mock_tempfile_cm.__enter__.return_value = mock_temp_file_obj
+        mock_tempfile.return_value = mock_tempfile_cm
+
+        expected_result = "JMeter test done, cleanup failed."
+        mock_run_jmeter.return_value = expected_result
+        mock_remove.side_effect = OSError("Permission denied") # Simulate failure
+
+        # Call function
+        result = await execute_jmeter_test(mock_adk_file)
+
+        # Assertions
+        mock_tempfile.assert_called_once()
+        mock_adk_file.save_to.assert_called_once()
+        mock_run_jmeter.assert_called_once()
+        mock_remove.assert_called_once_with(mock_temp_file_obj.name) # os.remove was called
+        self.assertEqual(result, expected_result) # Function should still return result
+
 
 if __name__ == '__main__':
     unittest.main()
