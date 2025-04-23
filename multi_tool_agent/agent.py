@@ -19,22 +19,24 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 load_dotenv()
 
-async def execute_jmeter_test(test_file: str, gui_mode: bool = False) -> str:
+async def execute_jmeter_test(test_file: str, duration: int = 30, threads: int = 10, gui_mode: bool = False) -> str:
     """Execute a JMeter test.
 
     Args:
         test_file: Path to the JMeter test file (.jmx)
+        duration: Duration of the test in seconds (e.g., 30, 60)
+        threads: Number of virtual users to simulate
         gui_mode: Whether to run in GUI mode (default: False)
     """
-    return await run_jmeter(test_file, non_gui=not gui_mode)  # Run in non-GUI mode by default
+    return await run_jmeter(test_file, duration, threads, non_gui=not gui_mode) # Run in non-GUI mode by default
 
-async def execute_jmeter_test_non_gui(test_file: str) -> str:
+async def execute_jmeter_test_non_gui(test_file: str, duration: int = 30, threads: int = 10) -> str:
     """Execute a JMeter test in non-GUI mode.
 
     Args:
         test_file: Path to the JMeter test file (.jmx)
     """
-    return await run_jmeter(test_file, non_gui=True)
+    return await run_jmeter(test_file, duration , threads, non_gui=True)
 
 async def execute_k6_test(script_file: str, duration: str = "30s", vus: int = 10) -> str:
     """Execute a k6 load test.

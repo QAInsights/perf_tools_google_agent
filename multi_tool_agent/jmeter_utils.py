@@ -14,11 +14,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-async def run_jmeter(test_file: str, non_gui: bool = True) -> str:
+async def run_jmeter(test_file: str, duration: int = 30, threads: int = 10, non_gui: bool = True) -> str:
     """Run a JMeter test.
 
     Args:
         test_file: Path to the JMeter test file (.jmx)
+        duration: Duration of the test in seconds (e.g., 30, 60)
+        threads: Number of virtual users to simulate
         non_gui: Run in non-GUI mode (default: True)
 
     Returns:
@@ -53,6 +55,8 @@ async def run_jmeter(test_file: str, non_gui: bool = True) -> str:
         if non_gui:
             cmd.extend(['-n'])
         cmd.extend(['-t', str(test_file_path)])
+        cmd.extend(['-J', f"threads={str(threads)}"])
+        cmd.extend(['-J', f"duration={str(duration)}"])
 
         # Log the full command for debugging
         logger.debug(f"Executing command: {' '.join(cmd)}")

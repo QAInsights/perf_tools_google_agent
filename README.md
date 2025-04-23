@@ -67,12 +67,16 @@ This will start the agent at http://localhost:8000, where you can interact with 
 ### Supported Performance Testing Tools
 
 #### JMeter
-The agent can execute JMeter test plans (.jmx files) in both GUI and non-GUI modes.
+The agent can execute JMeter test plans (.jmx files) in both GUI and non-GUI modes with customizable duration and virtual user count.
 
 **Example commands:**
 - Run in non-GUI mode (default):
   ```
   Run my JMeter test at /path/to/test.jmx
+  ```
+- Run in non-GUI mode (with custom settings):
+  ```
+  Run my JMeter test at /path/to/test.jmx with 20 users and 300 seconds
   ```
 - Run in GUI mode:
   ```
