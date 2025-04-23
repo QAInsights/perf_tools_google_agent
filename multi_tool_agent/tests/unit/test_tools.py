@@ -20,6 +20,11 @@ class TestJMeterUtils(IsolatedAsyncioTestCase):
         with patch('multi_tool_agent.jmeter_utils.run_jmeter', return_value="Test completed successfully") as mock_run:
             result = await run_jmeter(self.test_jmx)
             self.assertIn("end of run", result.lower())
+    async def test_run_jmeter(self):
+        """Test running a JMeter test with arguments"""
+        with patch('multi_tool_agent.jmeter_utils.run_jmeter', return_value="Test completed successfully") as mock_run:
+            result = await run_jmeter(self.test_jmx, 60, 20)
+            self.assertIn("end of run", result.lower())
             
     @patch('pathlib.Path.exists')
     @patch('pathlib.Path.resolve')
